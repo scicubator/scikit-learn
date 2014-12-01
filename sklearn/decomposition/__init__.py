@@ -16,7 +16,6 @@ from .dict_learning import (dict_learning, dict_learning_online, sparse_encode,
                             SparseCoder)
 from .factor_analysis import FactorAnalysis
 from ..utils.extmath import randomized_svd
-from .lost import Lost
 
 __all__ = ['DictionaryLearning',
            'FastICA',
@@ -36,5 +35,4 @@ __all__ = ['DictionaryLearning',
            'randomized_svd',
            'sparse_encode',
            'FactorAnalysis',
-           'TruncatedSVD',
-           'Lost']
+           'TruncatedSVD']
