@@ -124,9 +124,9 @@ class TestLOST:
    
     # Perform LOST!
     lost = Lost(n_sources=N+2, max_iter=max_iter, random_state=random_state)
-    A_est = lost.fit(X)
+    lost.fit(X)
     
-    assert_true(array_almost_equal_up_to_permutation_and_scaling(A, np.array(A_est), 2), \
+    assert_true(array_almost_equal_up_to_permutation_and_scaling(A, np.array(lost.A_), 2), \
     "LOST did not converge.")
     
 if __name__ == '__main__':

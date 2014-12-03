@@ -52,10 +52,10 @@ def array_almost_equal_up_to_permutation_and_scaling(A, A_est, precision_places 
 # Specify parameters  
 T = 20000
 max_iter = 50
-#beta = 60
 
 # Mixing matrix
-A = np.array([[0.8321, 0.6247, -0.9939], [-0.5547, 0.7809, 0.1104]])
+#A = np.array([[0.8321, 0.6247, -0.9939], [-0.5547, 0.7809, 0.1104]])
+A = np.array([[0.8321, 0.6247], [-0.5547, 0.7809]])
 M, N = A.shape
 
 # Laplacian Sources
@@ -73,15 +73,15 @@ plt.title("Scatterplot of X[0] V X[1]")
 
 # Perform LOST!
 lost = Lost(n_sources=N+20, max_iter=max_iter)
-A_est = lost.fit(X)
+lost.fit(X)
 
 
 print "A Estimate:"
-print A_est  
+print lost.A_  
  
 print "Beta:", lost.beta_
 
-assert array_almost_equal_up_to_permutation_and_scaling(A, np.array(A_est), 1) , \
+assert array_almost_equal_up_to_permutation_and_scaling(A, np.array(lost.A_), 1) , \
   "Estimate is wrong."  
 
-#lost.project()
+S_est = lost.transform(X)

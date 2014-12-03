@@ -13,7 +13,9 @@ __version__ = "0.1"
 
 import numpy as np
 from scipy.sparse import rand as srand
-from sklearn.preprocessing import normalize
+
+from ..base import BaseEstimator, TransformerMixin
+from ..preprocessing import normalize
 
 # Define consts
 MAX_BETA = 200
@@ -85,7 +87,7 @@ def _args_under_threshold(vals, threshold):
   """
   return sorted([i for i, j in enumerate(vals) if j < threshold])
 
-class Lost(object):
+class Lost(BaseEstimator, TransformerMixin):
   """Line Orientation Separation Technique - LOST
   """
 
@@ -169,7 +171,7 @@ class Lost(object):
     
     self.FINISHED = False
     
-  def fit(self, X):
+  def fit(self, X, y=None):
     """
     """
     self.M, T = X.shape
@@ -214,10 +216,9 @@ class Lost(object):
       
     print "Done."
     self.FINISHED = True
-    return self.A_
+    return self
     
-    
-  def project(self):
+  def transform(self, X):
     """Recover `S` from `X` using `A_`. 
     """
     if not self.FINISHED:
@@ -228,10 +229,10 @@ class Lost(object):
           "For the under-determined case (M<N) we use L1-norm minimisation, " \
           "which is yet to be implemented."
       elif self.M > self.n_sources:
-        raise NotImplementedError, \
-          "For the over-determined case (M>N) we use the Moore-Penrose pseudoinverse, " \
-          "which is yet to be implemented."
+        # For the over-determined case (M>N) use the Moore-Penrose pseudoinverse.
+        W = np.linalg.pinv(self.A_)        
+        return W.dot(X)
       elif self.M == self.n_sources:
-        raise NotImplementedError, \
-          "For the even-determined case (M=N) we use a linear transformation, " \
-          "which is yet to be implemented."
+        # For the even-determined case (M=N) use a linear transformation.
+        W = np.linalg.inv(self.A_)
+        return W.dot(X)
