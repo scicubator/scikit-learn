@@ -103,10 +103,10 @@ class Lost(BaseEstimator, TransformerMixin):
                             
     pass
   
-  def _update_beta(self, variances):
-    """
-    """
-    beta = 1/max(variances)
+  #def _update_beta(self, variances):
+  #  """
+  #  """
+  #  beta = 1/max(variances)
   
   def _initialise(self, random_state):
     """Initial estimate, normailse columns
@@ -120,9 +120,9 @@ class Lost(BaseEstimator, TransformerMixin):
     """
     return np.multiply(weightings, X).dot(X.T) / (weightings.sum() * (X.shape[0]-ddof))
   
-  def __init__(self, n_sources, beta=1, max_iter=MAX_ITER, random_state=None, 
-               centre_data=True, max_beta=MAX_BETA, eigenvalue_threshold = 
-               DEFAULT_EIGENVALUE_THRESH):
+  def __init__(self, n_sources, beta=None, max_iter=MAX_ITER, random_state=None, 
+               prune_lines=True, centre_data=True, max_beta=MAX_BETA, 
+               eigenvalue_threshold = DEFAULT_EIGENVALUE_THRESH):
     """Line Orientation Separation Technique - LOST.
     
     LOST identifies lines in a scatterplot that cross the origin using a 
@@ -161,8 +161,16 @@ class Lost(BaseEstimator, TransformerMixin):
 
     """
     self.n_sources = n_sources
-    self.beta_ = beta
+    if not beta:
+      self.beta_ = 1
+      self.beta = self.beta_
+      self.AUTOMATIC_BETA = True
+    else:
+      self.beta_ = None
+      self.beta = beta
+      self.AUTOMATIC_BETA = False
     self.max_iter = max_iter
+    self.prune_lines = prune_lines
     self.random_state = random_state
     
     self.centre_data = centre_data
@@ -189,7 +197,7 @@ class Lost(BaseEstimator, TransformerMixin):
       A_prev = self.A_.copy()
       
       # Expectation step : Soft assignment of observations, X, to line estimates, A_.
-      self.Q_ = _soft_assignment(X, self.A_, self.beta_)
+      self.Q_ = _soft_assignment(X, self.A_, self.beta)
       
       # Maximization Step: Calculate weighted covariance for each line and perform PCA
       new_beta_candidates = [1./self.max_beta]
@@ -207,10 +215,12 @@ class Lost(BaseEstimator, TransformerMixin):
         % (iter_, self.n_sources, np.linalg.norm(self.A_-A_prev, ord='fro'))
         
       # Update beta parameter
-      self.beta_ = 1. / max(new_beta_candidates)  
+      if self.AUTOMATIC_BETA:
+        self.beta_ = 1. / max(new_beta_candidates)
+        self.beta = self.beta_
       
       # Remove extraneous lines
-      if iter_ > PRUNE_LINES_ITER_START:
+      if iter_ > PRUNE_LINES_ITER_START and self.prune_lines:
         self._prune_lines(principal_eig_vals)
       
       
