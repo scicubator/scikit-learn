@@ -20,34 +20,47 @@ def sparse_signal(N, T=20000, density=.1):
     Z[i,:] = np.random.permutation([0]* n_zero + 
     [np.random.laplace() for _ in xrange(n_non_zero)])
   return Z
-  
+
 def array_almost_equal_up_to_permutation_and_scaling(A, A_est, precision_places = 2):
   """A ~= A_est up to permutation and scaling of columns.
   
   Example
   -------
   
-  >>> A = np.random.random((5,5))
-  >>> array_almost_equal_up_to_permutation_and_scaling(A, -A[:,::-1]+.01, 2)
-  True
-  >>> array_almost_equal_up_to_permutation_and_scaling(A, -A[:,::-1]+.1, 2)
+  >>> A = np.random.randint(0,10,(5,5))
+  >>> array_almost_equal_up_to_permutation_and_scaling(A, -(A[:,::-1]+.001), 2)
+  [-4, -3, -2, -1, 0]
+  >>> array_almost_equal_up_to_permutation_and_scaling(A, (A[:,::-1]+.001), 1)
+  [4, 3, 2, 1, 0]
+  >>> array_almost_equal_up_to_permutation_and_scaling(A, -(A[:,::-1]+.01), 2)
   False
     
   """
+  # Convert to matrices 
+  if isinstance(A, np.ndarray):
+    A = np.asmatrix(A)
+  if isinstance(A_est, np.ndarray):
+    A_est = np.asmatrix(A_est)    
+ 
+  # Set precision
+  precision = lambda X, prec : np.trunc(X * 10**prec) / 10.0**prec
+  A = precision(A, precision_places)
+  A_est = precision(A_est, precision_places) 
+  
+  # Compare columns
   N = A.shape[1]
+  inds = [None] * N # Indices of the cols of A_est that match A.
   for i in xrange(N):
     for j in xrange(N):
-      try:
-        assert_array_almost_equal(A[:,i], A_est[:,j], precision_places)
-        break
-      except AssertionError:
-        try:
-          assert_array_almost_equal(A[:,i], -A_est[:,j], precision_places)
-          break
-        except AssertionError:
-          if j==N-1:
-            return False
-  return True
+        if all(A[:,i]-A_est[:,j] == 0):
+          inds[i]=j
+        if all(A[:,i]+A_est[:,j] == 0):
+          inds[i]=-j
+  # Check match for i-th column
+  if None in inds:
+    return False
+        
+  return inds
   
 # Specify parameters  
 T = 20000
@@ -67,9 +80,9 @@ X=A.dot(S)
 plt.scatter(X[0,:], X[1,:], marker='.')
 plt.axis('equal')
 plt.xlabel("X[0]")
-plt.ylabel("X[1]") 
+plt.ylabel("X[1]")
 plt.title("Scatterplot of X[0] V X[1]")
-#plt.show()
+plt.show()
 
 # Perform LOST!
 lost = Lost(n_sources=N+20, max_iter=max_iter)
@@ -81,7 +94,7 @@ print lost.A_
  
 print "Beta:", lost.beta_
 
-assert array_almost_equal_up_to_permutation_and_scaling(A, np.array(lost.A_), 1) , \
+assert array_almost_equal_up_to_permutation_and_scaling(A, np.array(lost.A_), precision_places=1) , \
   "Estimate is wrong."  
 
-S_est = lost.transform(X)
+#S_est = lost.transform(X)
